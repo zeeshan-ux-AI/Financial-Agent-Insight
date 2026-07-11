@@ -3,20 +3,32 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Multi-Provider Financial Agent Decision-Support System API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: providers
+    description: Provider balance operations
+  - name: transactions
+    description: Transaction operations
+  - name: alerts
+    description: Alert management
+  - name: audit
+    description: Audit log operations
+  - name: dashboard
+    description: Dashboard summary
+  - name: seed
+    description: Data seeding
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +36,276 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /providers:
+    get:
+      operationId: getProviders
+      tags: [providers]
+      summary: Get all providers with balances
+      responses:
+        "200":
+          description: List of providers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Provider"
+
+  /providers/{id}:
+    get:
+      operationId: getProviderById
+      tags: [providers]
+      summary: Get a single provider
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Provider details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Provider"
+
+  /transactions:
+    get:
+      operationId: getTransactions
+      tags: [transactions]
+      summary: Get transactions with optional filtering
+      parameters:
+        - name: providerId
+          in: query
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: flagged
+          in: query
+          schema:
+            type: boolean
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Transaction list with pagination
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionList"
+
+  /transactions/stats:
+    get:
+      operationId: getTransactionStats
+      tags: [transactions]
+      summary: Get transaction volume stats (hourly/daily) for charts
+      parameters:
+        - name: providerId
+          in: query
+          schema:
+            type: string
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [hourly, daily]
+            default: hourly
+      responses:
+        "200":
+          description: Transaction stats for visualization
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TransactionStat"
+
+  /alerts:
+    get:
+      operationId: getAlerts
+      tags: [alerts]
+      summary: Get all alerts
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, escalated, resolved, all]
+            default: all
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [liquidity, anomaly, all]
+            default: all
+        - name: providerId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Alert"
+
+  /alerts/{id}:
+    get:
+      operationId: getAlertById
+      tags: [alerts]
+      summary: Get a single alert with full detail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Alert detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlertDetail"
+    patch:
+      operationId: updateAlertStatus
+      tags: [alerts]
+      summary: Update alert status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAlertStatusInput"
+      responses:
+        "200":
+          description: Updated alert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alert"
+
+  /alerts/{id}/comments:
+    post:
+      operationId: addAlertComment
+      tags: [alerts]
+      summary: Add a comment/action to an alert
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddCommentInput"
+      responses:
+        "201":
+          description: Created audit log entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditLog"
+
+  /audit-logs:
+    get:
+      operationId: getAuditLogs
+      tags: [audit]
+      summary: Get audit logs
+      parameters:
+        - name: alertId
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+      responses:
+        "200":
+          description: Audit logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLog"
+
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get dashboard summary statistics
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /seed:
+    post:
+      operationId: seedData
+      tags: [seed]
+      summary: Seed synthetic data
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SeedInput"
+      responses:
+        "200":
+          description: Seed result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeedResult"
+
+  /simulate/anomaly:
+    post:
+      operationId: simulateAnomaly
+      tags: [seed]
+      summary: Trigger a simulated anomaly for demo purposes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SimulateAnomalyInput"
+      responses:
+        "200":
+          description: Simulation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimulateAnomalyResult"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +316,386 @@ components:
       required:
         - status
 
+    Provider:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        displayName:
+          type: string
+        colorCode:
+          type: string
+        eMoneyBalance:
+          type: number
+        physicalCashBalance:
+          type: number
+        totalAgents:
+          type: integer
+        activeAlerts:
+          type: integer
+        liquidityRatio:
+          type: number
+          description: eMoneyBalance / physicalCashBalance ratio
+        status:
+          type: string
+          enum: [healthy, warning, critical]
+        lastUpdated:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - displayName
+        - colorCode
+        - eMoneyBalance
+        - physicalCashBalance
+        - totalAgents
+        - activeAlerts
+        - liquidityRatio
+        - status
+        - lastUpdated
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+        providerId:
+          type: string
+        providerName:
+          type: string
+        type:
+          type: string
+          enum: [cash_in, cash_out, p2p_transfer, bill_payment, salary_disbursement]
+        amount:
+          type: number
+        agentId:
+          type: string
+        agentName:
+          type: string
+        customerId:
+          type: string
+        status:
+          type: string
+          enum: [completed, pending, failed]
+        flagged:
+          type: boolean
+        flagReason:
+          type: string
+          nullable: true
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - id
+        - providerId
+        - providerName
+        - type
+        - amount
+        - agentId
+        - agentName
+        - customerId
+        - status
+        - flagged
+        - timestamp
+
+    TransactionList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Transaction"
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+      required:
+        - data
+        - total
+        - limit
+        - offset
+
+    TransactionStat:
+      type: object
+      properties:
+        period:
+          type: string
+        providerId:
+          type: string
+        providerName:
+          type: string
+        cashIn:
+          type: number
+        cashOut:
+          type: number
+        volume:
+          type: integer
+        netFlow:
+          type: number
+      required:
+        - period
+        - providerId
+        - providerName
+        - cashIn
+        - cashOut
+        - volume
+        - netFlow
+
+    Alert:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [liquidity, anomaly]
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        providerId:
+          type: string
+        providerName:
+          type: string
+        providerColor:
+          type: string
+        title:
+          type: string
+        titleBn:
+          type: string
+        reason:
+          type: string
+        reasonBn:
+          type: string
+        evidence:
+          type: string
+        assignedTo:
+          type: string
+        assignedRole:
+          type: string
+        recommendedSteps:
+          type: array
+          items:
+            type: string
+        recommendedStepsBn:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [open, escalated, resolved]
+        relatedTransactionIds:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - type
+        - severity
+        - providerId
+        - providerName
+        - providerColor
+        - title
+        - titleBn
+        - reason
+        - reasonBn
+        - evidence
+        - assignedTo
+        - assignedRole
+        - recommendedSteps
+        - recommendedStepsBn
+        - status
+        - relatedTransactionIds
+        - createdAt
+        - updatedAt
+
+    AlertDetail:
+      allOf:
+        - $ref: "#/components/schemas/Alert"
+        - type: object
+          properties:
+            auditLogs:
+              type: array
+              items:
+                $ref: "#/components/schemas/AuditLog"
+            relatedTransactions:
+              type: array
+              items:
+                $ref: "#/components/schemas/Transaction"
+          required:
+            - auditLogs
+            - relatedTransactions
+
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: string
+        alertId:
+          type: string
+        action:
+          type: string
+          enum: [created, status_changed, comment_added, assigned, escalated, resolved]
+        actor:
+          type: string
+        notes:
+          type: string
+        previousStatus:
+          type: string
+          nullable: true
+        newStatus:
+          type: string
+          nullable: true
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - id
+        - alertId
+        - action
+        - actor
+        - notes
+        - timestamp
+
+    UpdateAlertStatusInput:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [open, escalated, resolved]
+        actor:
+          type: string
+        notes:
+          type: string
+      required:
+        - status
+        - actor
+
+    AddCommentInput:
+      type: object
+      properties:
+        actor:
+          type: string
+        notes:
+          type: string
+      required:
+        - actor
+        - notes
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalPhysicalCash:
+          type: number
+        providers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Provider"
+        alertCounts:
+          $ref: "#/components/schemas/AlertCounts"
+        recentAlerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Alert"
+        transactionVolume24h:
+          type: number
+        transactionCount24h:
+          type: integer
+        flaggedCount24h:
+          type: integer
+        liquidityTrend:
+          type: array
+          items:
+            $ref: "#/components/schemas/TransactionStat"
+      required:
+        - totalPhysicalCash
+        - providers
+        - alertCounts
+        - recentAlerts
+        - transactionVolume24h
+        - transactionCount24h
+        - flaggedCount24h
+        - liquidityTrend
+
+    AlertCounts:
+      type: object
+      properties:
+        open:
+          type: integer
+        escalated:
+          type: integer
+        resolved:
+          type: integer
+        total:
+          type: integer
+      required:
+        - open
+        - escalated
+        - resolved
+        - total
+
+    SeedInput:
+      type: object
+      properties:
+        reset:
+          type: boolean
+          default: false
+        transactionCount:
+          type: integer
+          default: 200
+
+    SeedResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        providersCreated:
+          type: integer
+        transactionsCreated:
+          type: integer
+        alertsCreated:
+          type: integer
+        message:
+          type: string
+      required:
+        - success
+        - providersCreated
+        - transactionsCreated
+        - alertsCreated
+        - message
+
+    SimulateAnomalyInput:
+      type: object
+      properties:
+        providerId:
+          type: string
+        anomalyType:
+          type: string
+          enum: [spike, liquidity_drop, unusual_pattern]
+          default: spike
+
+    SimulateAnomalyResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        alertCreated:
+          $ref: "#/components/schemas/Alert"
+        transactionsCreated:
+          type: integer
+        message:
+          type: string
+      required:
+        - success
+        - transactionsCreated
+        - message
