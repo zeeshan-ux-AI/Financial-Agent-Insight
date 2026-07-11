@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { getSeverityBadgeVariant, getStatusBadgeVariant } from '@/lib/theme';
 import { ArrowLeft, Clock, MessageSquare, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { AIAnalysisPanel } from '@/components/ai/AIAnalysisPanel';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -231,6 +232,8 @@ export default function AlertDetail() {
         </div>
 
         <div className="space-y-6">
+          <AIAnalysisPanel alertId={id} />
+
           <Card>
             <CardHeader className="bg-muted/20 border-b">
               <CardTitle>Management</CardTitle>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useLocale } from '@/contexts/LocaleContext';
+import { AIChatWidget } from '@/components/ai/AIChatWidget';
 import { 
   LayoutDashboard, 
   ArrowLeftRight, 
@@ -104,6 +105,8 @@ export function Shell({ children }: ShellProps) {
           </div>
         </div>
       </main>
+
+      <AIChatWidget />
     </div>
   );
 }
