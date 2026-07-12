@@ -25,7 +25,21 @@ app.use(
     },
   }),
 );
-app.use(cors());
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. curl, Render health checks)
+      if (!origin) return callback(null, true);
+      // Allow localhost dev servers and all Vercel preview/production URLs
+      const allowed =
+        /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
+        /\.vercel\.app$/.test(origin) ||
+        /\.onrender\.com$/.test(origin);
+      callback(null, allowed ? origin : false);
+    },
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

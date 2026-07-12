@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: financial-agent-api
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: artifacts/api-server
+    buildCommand: cd ../.. && npm install -g pnpm && pnpm install --frozen-lockfile && pnpm --filter @workspace/api-server run build
+    startCommand: node --enable-source-maps ./dist/index.mjs
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: PORT
+        value: "10000"
