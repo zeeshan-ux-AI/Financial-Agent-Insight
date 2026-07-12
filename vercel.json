@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "buildCommand": "npm install -g pnpm && pnpm install --no-frozen-lockfile && pnpm --filter @workspace/api-client-react run build 2>/dev/null; pnpm --filter @workspace/dashboard run build",
+  "outputDirectory": "artifacts/dashboard/dist/public",
+  "installCommand": "echo 'install handled in buildCommand'",
+  "framework": null,
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
+  ]
+}
